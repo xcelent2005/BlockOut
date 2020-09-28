@@ -1,4 +1,168 @@
 /*****************************************************************************************/
+// Swipe class
+/*****************************************************************************************/
+
+var last_swipe_time = 0;
+
+class Swipe {
+	mylatesttap = 0;
+	last_swipe_time = 0;
+	constructor(element) {
+        this.xDown = null;
+        this.yDown = null;
+        this.element = typeof(element) === 'string' ? document.querySelector(element) : element;
+
+        this.element.addEventListener('touchstart', function(evt) {
+            this.xDown = evt.touches[0].clientX;
+            this.yDown = evt.touches[0].clientY;
+			
+			var canvas = document.getElementById("screen");
+			var rect = canvas.getBoundingClientRect();
+			this.xCanvas = this.xDown - rect.left;
+			this.yCanvas = this.yDown - rect.top;
+					
+			
+        }.bind(this), false);
+        
+    }
+
+    onLeftMove(callback) {
+        this.onLeftMove = callback;
+        return this;
+    }
+
+    onRightMove(callback) {
+        this.onRightMove = callback;
+        return this;
+    }
+
+    onUpMove(callback) {
+        this.onUpMove = callback;
+        return this;
+    }
+
+    onDownMove(callback) {
+        this.onDownMove = callback;
+        return this;
+    }
+	
+
+
+    onLeftRotate(callback) {
+        this.onLeftRotate = callback;
+        return this;
+    }
+
+    onRightRotate(callback) {
+        this.onRightRotate = callback;
+        return this;
+    }
+
+    onUpRotate(callback) {
+        this.onUpRotate = callback;
+        return this;
+    }
+
+    onDownRotate(callback) {
+        this.onDownRotate = callback;
+        return this;
+    }
+	
+	onDoubletap(callback) {
+       this.onDoubletap = callback;
+	   return this;
+    }
+
+		handleDoubleTap(evt){
+			var now = new Date().getTime();
+			var timesince = now - this.mylatesttap;
+			
+			if((timesince < 200) && (timesince > 0)){
+				this.onDoubletap();
+			}
+			this.mylatesttap = new Date().getTime();
+			
+		}
+		handleTouchMove(evt) {
+			if ( !this.xDown || !this.yDown
+				&& typeof(this.xCanvas) == 'undefined' || this.xCanvas<250) {
+				return 0;
+			}
+			
+			// console.log(this.xCanvas + " move");
+
+	    	var xUp = evt.touches[0].clientX;
+			var yUp = evt.touches[0].clientY;
+
+			this.xDiff = this.xDown - xUp;
+			this.yDiff = this.yDown - yUp;
+
+			if ( Math.abs( this.xDiff ) > Math.abs( this.yDiff )) { // Most significant.
+				if ( this.xDiff > 0 ) {
+					this.onRightMove();
+				} else {
+					this.onLeftMove();
+				}
+			} else {
+				if ( this.yDiff > 0 ) {
+					this.onUpMove();
+				} else {
+					this.onDownMove();
+				}
+			}
+			
+			// Reset values.
+			this.xDown = null;
+			this.yDown = null;
+			return 1;
+    }
+		handleTouchRotate(evt) {
+			if (! this.xDown || ! this.yDown
+				|| typeof(this.xCanvas) == 'undefined' || this.xCanvas>=250) {
+				return 0;
+			}
+			// console.log(this.xCanvas + " rotate");
+	
+	    	var xUp = evt.touches[0].clientX;
+			var yUp = evt.touches[0].clientY;
+
+			this.xDiff = this.xDown - xUp;
+			this.yDiff = this.yDown - yUp;
+
+			if ( Math.abs( this.xDiff ) > Math.abs( this.yDiff )) { // Most significant.
+				if ( this.xDiff > 0 ) {
+					this.onLeftRotate();
+				} else {
+					this.onRightRotate();
+				}
+			} else {
+				if ( this.yDiff > 0 ) {
+					this.onUpRotate();
+				} else {
+					this.onDownRotate();
+				}
+			}
+			
+			// Reset values.
+			this.xDown = null;
+			this.yDown = null;
+			return 1;
+    }
+	
+    run() {
+        this.element.addEventListener('touchmove', function(evt) {
+            this.handleTouchMove(evt);
+            this.handleTouchRotate(evt);
+        }.bind(this), false);
+		
+		this.element.addEventListener('touchend', function(evt) {
+			this.handleDoubleTap(evt);
+        }.bind(this), false);
+    }
+}
+
+
+/*****************************************************************************************/
 // Globals
 /*****************************************************************************************/
 
@@ -56,10 +220,12 @@ var ANIM_DURATION = MED_ANIM_DURATION;
 var FRAME_DELAY = 10;
 
 var DELTA = 1;
+
 var DELTA_ANGLE = Math.PI / 2;
 
 // pieces
 var SET = 'basic';
+
 
 // piece shapes
 var TEMPLATES = {
@@ -335,7 +501,7 @@ var ID1 = -1,
   ID2 = -1;
 
 // game state
-var STATE = { setkeys: 0 };
+var STATE = { setkeys: 0, settouch:0 };
 
 // pause
 var PAUSE_ANIM = 1;
@@ -400,7 +566,6 @@ function generate_layer(width, height) {
 
 function generate_layers(width, height, depth) {
   var layers = [];
-
   for (var z = 0; z < depth; ++z)
   layers.push(generate_layer(width, height));
 
@@ -1545,7 +1710,10 @@ function init_game_keys(canvas, ctx) {
     }
     set_key(e.which);
   };
+
   $(document).keydown(start_handler);
+  
+
 }
 
 function end_game(canvas, ctx) {
@@ -1735,9 +1903,523 @@ function play_game(canvas, ctx, start_handler) {
   if (AUTOFALL_DELAY)
       ID2 = setInterval(function () {  autofall(canvas, ctx);  }, AUTOFALL_DELAY);
 
-  $(document).keydown(function (e) {
-    handle_key(e, canvas, ctx);
+	$(document).keydown(function (e) {
+		handle_key(e, canvas, ctx);
+	});
+	$(document).bind('touchstart touchend touchmove', function(){
+		// handle swipe events
+  	var swiper = new Swipe(document.getElementById('screen'));
+	
+	
+	// ------Translations--------
+	
+	swiper.onLeftMove(function() {
+		 if (STATE.paused) {
+			pause(canvas, ctx);
+			return;
+		  }
+		  var translate_flag = 0;
+		  var rotate_flag = 0;
+		  var drop_flag = 0;
+		  var anim_flag = 0;
+
+		  var dx = 0,
+			dy = 0,
+			dz = 0;
+		  var da = [0, 0, 0];
+		  var rot;
+
+		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
+		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
+		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
+
+		  var invert = function (m) {
+			var r = new Array(9);
+			r[0] = m[0];
+			r[1] = -m[1];
+			r[2] = -m[2];
+			r[3] = -m[3];
+			r[4] = m[4];
+			r[5] = -m[5];
+			r[6] = -m[6];
+			r[7] = -m[7];
+			r[8] = m[8];
+			return r;
+		  };
+		
+
+			var now = new Date().getTime();
+			var time_elapsed = now - last_swipe_time;
+			
+			if (time_elapsed>200){
+				translate_flag = 1;
+				dx = +DELTA;
+				last_swipe_time = new Date().getTime();
+			}
+		if (translate_flag) {
+			nvoxels = project_voxels(STATE.piece, STATE.new_x + dx, STATE.new_y + dy, STATE.new_z + dz, STATE.new_matrix);
+			if (!is_overlap_layers(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH, LAYERS)) {
+			  STATE.new_x += dx;
+			  STATE.new_y += dy;
+			  STATE.new_z += dz;
+			  anim_flag = 1;
+		}
+	if (anim_flag) set_start(rotate_flag);
+	return;
+  }
   });
+	swiper.onRightMove(function() {
+		if (STATE.paused) {
+			pause(canvas, ctx);
+			return;
+		  }
+		  var translate_flag = 0;
+		  var rotate_flag = 0;
+		  var drop_flag = 0;
+		  var anim_flag = 0;
+
+		  var dx = 0,
+			dy = 0,
+			dz = 0;
+		  var da = [0, 0, 0];
+		  var rot;
+
+		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
+		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
+		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
+
+		  var invert = function (m) {
+			var r = new Array(9);
+			r[0] = m[0];
+			r[1] = -m[1];
+			r[2] = -m[2];
+			r[3] = -m[3];
+			r[4] = m[4];
+			r[5] = -m[5];
+			r[6] = -m[6];
+			r[7] = -m[7];
+			r[8] = m[8];
+			return r;
+		  };
+		var now = new Date().getTime();
+		var time_elapsed = now - last_swipe_time;
+			
+		if (time_elapsed>200){
+			translate_flag = 1;
+			dx = -DELTA;
+			last_swipe_time = new Date().getTime();
+		}
+		if (translate_flag) {
+			nvoxels = project_voxels(STATE.piece, STATE.new_x + dx, STATE.new_y + dy, STATE.new_z + dz, STATE.new_matrix);
+			if (!is_overlap_layers(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH, LAYERS)) {
+			  STATE.new_x += dx;
+			  STATE.new_y += dy;
+			  STATE.new_z += dz;
+			  anim_flag = 1;
+			}
+		}
+		if (anim_flag) set_start(rotate_flag);
+	});
+	swiper.onUpMove(function() {
+      if (STATE.paused) {
+			pause(canvas, ctx);
+			return;
+		  }
+		  var translate_flag = 0;
+		  var rotate_flag = 0;
+		  var drop_flag = 0;
+		  var anim_flag = 0;
+
+		  var dx = 0,
+			dy = 0,
+			dz = 0;
+		  var da = [0, 0, 0];
+		  var rot;
+
+		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
+		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
+		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
+
+		  var invert = function (m) {
+			var r = new Array(9);
+			r[0] = m[0];
+			r[1] = -m[1];
+			r[2] = -m[2];
+			r[3] = -m[3];
+			r[4] = m[4];
+			r[5] = -m[5];
+			r[6] = -m[6];
+			r[7] = -m[7];
+			r[8] = m[8];
+			return r;
+		  };
+		
+		var now = new Date().getTime();
+		var time_elapsed = now - last_swipe_time;
+			
+		if (time_elapsed>200){
+			translate_flag = 1;
+			dy = -DELTA;
+			last_swipe_time = new Date().getTime();
+
+		}
+		
+		if (translate_flag) {
+			nvoxels = project_voxels(STATE.piece, STATE.new_x + dx, STATE.new_y + dy, STATE.new_z + dz, STATE.new_matrix);
+			if (!is_overlap_layers(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH, LAYERS)) {
+			  STATE.new_x += dx;
+			  STATE.new_y += dy;
+			  STATE.new_z += dz;
+			  anim_flag = 1;
+			}
+		}
+		if (anim_flag) set_start(rotate_flag);
+	});
+	swiper.onDownMove(function() {
+		if (STATE.paused) {
+			pause(canvas, ctx);
+			return;
+		  }
+		  var translate_flag = 0;
+		  var rotate_flag = 0;
+		  var drop_flag = 0;
+		  var anim_flag = 0;
+
+		  var dx = 0,
+			dy = 0,
+			dz = 0;
+		  var da = [0, 0, 0];
+		  var rot;
+
+		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
+		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
+		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
+
+		  var invert = function (m) {
+			var r = new Array(9);
+			r[0] = m[0];
+			r[1] = -m[1];
+			r[2] = -m[2];
+			r[3] = -m[3];
+			r[4] = m[4];
+			r[5] = -m[5];
+			r[6] = -m[6];
+			r[7] = -m[7];
+			r[8] = m[8];
+			return r;
+		  };
+		
+		var now = new Date().getTime();
+		var time_elapsed = now - last_swipe_time;
+			
+		if (time_elapsed > 200){
+			translate_flag = 1;
+			dy = +DELTA;
+			last_swipe_time = new Date().getTime();
+		}
+		
+		if (translate_flag) {
+			nvoxels = project_voxels(STATE.piece, STATE.new_x + dx, STATE.new_y + dy, STATE.new_z + dz, STATE.new_matrix);
+			if (!is_overlap_layers(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH, LAYERS)) {
+			  STATE.new_x += dx;
+			  STATE.new_y += dy;
+			  STATE.new_z += dz;
+			  anim_flag = 1;
+			}
+		}
+		if (anim_flag) set_start(rotate_flag);
+	});
+
+		
+		
+		// ------Rotations--------
+		
+		swiper.onLeftRotate(function() {
+		 if (STATE.paused) {
+			pause(canvas, ctx);
+			return;
+		  }
+		  var translate_flag = 0;
+		  var rotate_flag = 0;
+		  var drop_flag = 0;
+		  var anim_flag = 0;
+
+		  var dx = 0,
+			dy = 0,
+			dz = 0;
+		  var da = [0, 0, 0];
+		  var rot;
+
+		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
+		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
+		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
+
+		  var invert = function (m) {
+			var r = new Array(9);
+			r[0] = m[0];
+			r[1] = -m[1];
+			r[2] = -m[2];
+			r[3] = -m[3];
+			r[4] = m[4];
+			r[5] = -m[5];
+			r[6] = -m[6];
+			r[7] = -m[7];
+			r[8] = m[8];
+			return r;
+		  };
+		
+
+			var now = new Date().getTime();
+			var time_elapsed = now - last_swipe_time;
+			
+			if (time_elapsed>200){
+				rotate_flag = 1;
+				da[2] = -DELTA_ANGLE;
+				rot = invert(rotz);
+				last_swipe_time = new Date().getTime();
+			}
+		 if (rotate_flag) {
+			STATE.new_matrix = matmult(rot, STATE.new_matrix);
+			nvoxels = project_voxels(STATE.piece, STATE.new_x, STATE.new_y, STATE.new_z, STATE.new_matrix);
+			var deltas = overlap_diff(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH);
+			STATE.new_x += deltas[0];
+			STATE.new_y += deltas[1];
+			STATE.new_z += deltas[2];
+			STATE.new_angles = da;
+			anim_flag = 1;
+		  }
+	if (anim_flag) set_start(rotate_flag);
+	return;
+  });
+  
+	swiper.onRightRotate(function() {
+		if (STATE.paused) {
+			pause(canvas, ctx);
+			return;
+		  }
+		  var translate_flag = 0;
+		  var rotate_flag = 0;
+		  var drop_flag = 0;
+		  var anim_flag = 0;
+
+		  var dx = 0,
+			dy = 0,
+			dz = 0;
+		  var da = [0, 0, 0];
+		  var rot;
+
+		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
+		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
+		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
+
+		  var invert = function (m) {
+			var r = new Array(9);
+			r[0] = m[0];
+			r[1] = -m[1];
+			r[2] = -m[2];
+			r[3] = -m[3];
+			r[4] = m[4];
+			r[5] = -m[5];
+			r[6] = -m[6];
+			r[7] = -m[7];
+			r[8] = m[8];
+			return r;
+		  };
+		var now = new Date().getTime();
+		var time_elapsed = now - last_swipe_time;
+			
+		if (time_elapsed>200){
+			rotate_flag = 1;
+			da[2] = +DELTA_ANGLE;
+			rot = rotz;
+			last_swipe_time = new Date().getTime();
+		}
+		
+		if (rotate_flag) {
+			STATE.new_matrix = matmult(rot, STATE.new_matrix);
+			nvoxels = project_voxels(STATE.piece, STATE.new_x, STATE.new_y, STATE.new_z, STATE.new_matrix);
+			var deltas = overlap_diff(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH);
+			STATE.new_x += deltas[0];
+			STATE.new_y += deltas[1];
+			STATE.new_z += deltas[2];
+			STATE.new_angles = da;
+			anim_flag = 1;
+		  }
+		if (anim_flag) set_start(rotate_flag);
+	});
+	
+	swiper.onUpRotate(function() {
+      if (STATE.paused) {
+			pause(canvas, ctx);
+			return;
+		  }
+		  var translate_flag = 0;
+		  var rotate_flag = 0;
+		  var drop_flag = 0;
+		  var anim_flag = 0;
+
+		  var dx = 0,
+			dy = 0,
+			dz = 0;
+		  var da = [0, 0, 0];
+		  var rot;
+
+		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
+		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
+		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
+
+		  var invert = function (m) {
+			var r = new Array(9);
+			r[0] = m[0];
+			r[1] = -m[1];
+			r[2] = -m[2];
+			r[3] = -m[3];
+			r[4] = m[4];
+			r[5] = -m[5];
+			r[6] = -m[6];
+			r[7] = -m[7];
+			r[8] = m[8];
+			return r;
+		  };
+		
+		var now = new Date().getTime();
+		var time_elapsed = now - last_swipe_time;
+			
+		if (time_elapsed>200){
+				rotate_flag = 1;
+				da[1] = +DELTA_ANGLE;
+				rot = invert(roty);
+				last_swipe_time = new Date().getTime();
+		}
+		
+		if (rotate_flag) {
+			STATE.new_matrix = matmult(rot, STATE.new_matrix);
+			nvoxels = project_voxels(STATE.piece, STATE.new_x, STATE.new_y, STATE.new_z, STATE.new_matrix);
+			var deltas = overlap_diff(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH);
+			STATE.new_x += deltas[0];
+			STATE.new_y += deltas[1];
+			STATE.new_z += deltas[2];
+			STATE.new_angles = da;
+			anim_flag = 1;
+		  }
+		if (anim_flag) set_start(rotate_flag);
+	});
+	swiper.onDownRotate(function() {
+		if (STATE.paused) {
+			pause(canvas, ctx);
+			return;
+		  }
+		  var translate_flag = 0;
+		  var rotate_flag = 0;
+		  var drop_flag = 0;
+		  var anim_flag = 0;
+
+		  var dx = 0,
+			dy = 0,
+			dz = 0;
+		  var da = [0, 0, 0];
+		  var rot;
+
+		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
+		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
+		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
+
+		  var invert = function (m) {
+			var r = new Array(9);
+			r[0] = m[0];
+			r[1] = -m[1];
+			r[2] = -m[2];
+			r[3] = -m[3];
+			r[4] = m[4];
+			r[5] = -m[5];
+			r[6] = -m[6];
+			r[7] = -m[7];
+			r[8] = m[8];
+			return r;
+		  };
+		
+		var now = new Date().getTime();
+		var time_elapsed = now - last_swipe_time;
+			
+		if (time_elapsed > 200){
+			rotate_flag = 1;
+			da[1] = -DELTA_ANGLE;
+			rot = roty;
+			last_swipe_time = new Date().getTime();
+		}
+		  
+		if (rotate_flag) {
+			STATE.new_matrix = matmult(rot, STATE.new_matrix);
+			nvoxels = project_voxels(STATE.piece, STATE.new_x, STATE.new_y, STATE.new_z, STATE.new_matrix);
+			var deltas = overlap_diff(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH);
+			STATE.new_x += deltas[0];
+			STATE.new_y += deltas[1];
+			STATE.new_z += deltas[2];
+			STATE.new_angles = da;
+			anim_flag = 1;
+		  }
+		if (anim_flag) set_start(rotate_flag);
+	});
+	
+	
+	// ------Double tap--------
+	
+	swiper.onDoubletap(function(){
+		if (STATE.paused) {
+			pause(canvas, ctx);
+			return;
+		  }
+		  var translate_flag = 0;
+		  var rotate_flag = 0;
+		  var drop_flag = 0;
+		  var anim_flag = 0;
+
+		  var dx = 0,
+			dy = 0,
+			dz = 0;
+		  var da = [0, 0, 0];
+		  var rot;
+
+		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
+		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
+		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
+
+		  var invert = function (m) {
+			var r = new Array(9);
+			r[0] = m[0];
+			r[1] = -m[1];
+			r[2] = -m[2];
+			r[3] = -m[3];
+			r[4] = m[4];
+			r[5] = -m[5];
+			r[6] = -m[6];
+			r[7] = -m[7];
+			r[8] = m[8];
+			return r;
+		  };
+			drop_flag = 1;
+			var nvoxels;
+
+		  if (drop_flag) {
+			for (var i = 0; i < PIT_DEPTH; ++i) {
+			  nvoxels = project_voxels(STATE.piece, STATE.new_x, STATE.new_y, STATE.new_z + DELTA, STATE.new_matrix);
+			  if (!is_overlap_layers(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH, LAYERS)) {
+				STATE.new_z += DELTA;
+				anim_flag = 1;
+			  } else {
+				break;
+			  }
+			}
+			STATE.touchdown_flag = 1;
+		  }
+		  if (anim_flag) set_start(rotate_flag);
+		  return;
+
+		});
+		swiper.run();
+
+	})
+  
 }
 
 // fps counter globals
@@ -1975,6 +2657,7 @@ function reset_allowed() {
 /*****************************************************************************************/
 function set_ui_start() {
   STATE.setkeys = 0;
+  STATE.settouch = 0;
   $('.hud').css('display', 'none');
   $('#column').css('display', 'none');
   $('#footer').css('display', 'block');
@@ -2095,7 +2778,7 @@ function load_keys() {
 
 function change_keys(canvas, ctx) {
   STATE.setkeys = 1;
-
+  
   $('.hud').css('display', 'none');
   $('#score').css('display', 'none');
   $('#keyset').css('display', 'block');
@@ -2224,6 +2907,7 @@ function setRotateSpeed(spd) {
 }
 
 $(document).ready(function () {
+  
   copy_keymap(KEYMAP_DEFAULT, KEYMAP);
   copy_keymap(KEYMAP, KEYMAP_TMP);
 
@@ -2244,7 +2928,7 @@ $(document).ready(function () {
   reset_allowed();
 
   init_game_keys(canvas, ctx);
-
+  LAST_KEY_EL = 0;
   // difficulty settings
   $('#pieces .button').each(function () {
     if ($(this).text().toLowerCase() == SET) $(this).addClass('on');
@@ -2256,7 +2940,8 @@ $(document).ready(function () {
   });
 
 
-      $("#rotSpeed .button").each(function() {
+
+    $("#rotSpeed .button").each(function() {
         if ($(this).text().toLowerCase() == rotateSpeed) $(this).addClass("on");
     });
     $("#rotSpeed .button").click(function() {
@@ -2271,6 +2956,7 @@ $(document).ready(function () {
   $('#pit .button').each(function () {
     if ($(this).text().toLowerCase() == pit_string) $(this).addClass('on');
   });
+  
   $('#pit .button').click(function () {
     change_pit($(this).get(0), canvas, ctx);
     $('#pit .button').removeClass('on');
@@ -2319,6 +3005,16 @@ $(document).ready(function () {
     set_ui_start();
   });
 
+
+  $('#message').bind('touchend', function (evt) {
+	if (!STATE.settouch){  
+		LAST_KEY_EL = 0;
+		play_game(canvas, ctx, null);
+		STATE.settouch = 1;
+	}
+  });
+  	
+	
   refresh_column();
 });
 
@@ -2341,7 +3037,7 @@ function showScoreUI() {
     save_score();
     hs = "<span id='highscore'>New high score:</span>";
   }
-
+		
   $('#scorelabel').html(hs);
   $('#username-label').text(USERNAME);
   $('#finalscore').text(pretty_number(STATE.score));
