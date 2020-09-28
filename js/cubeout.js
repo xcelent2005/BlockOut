@@ -2,8 +2,6 @@
 // Swipe class
 /*****************************************************************************************/
 
-var last_swipe_time = 0;
-
 class Swipe {
 	mylatesttap = 0;
 	last_swipe_time = 0;
@@ -149,17 +147,33 @@ class Swipe {
 	
     run() {
         this.element.addEventListener('touchmove', function(evt) {
-            this.handleTouchMove(evt);
-            this.handleTouchRotate(evt);
+            if (game_over_flag==false){
+				this.handleTouchMove(evt);
+				this.handleTouchRotate(evt);
+			}
 			evt.preventDefault();
         }.bind(this), false);
 		
 		this.element.addEventListener('touchend', function(evt) {
-			this.handleDoubleTap(evt);
-			evt.preventDefault();
+			if (game_over_flag==false){
+				this.handleDoubleTap(evt);
+				evt.preventDefault();
+			}
         }.bind(this), false);
     }
 }
+
+
+var last_swipe_time = 0;
+
+var game_over_flag = true;
+
+var swiper;
+
+window.onload = (event) => {
+	var el = document.getElementById('screenwrap');
+	swiper = new Swipe(el);
+};
 
 
 /*****************************************************************************************/
@@ -1721,6 +1735,7 @@ function end_game(canvas, ctx) {
   set_ui_gameover();
   CANVAS = canvas;
   CTX = ctx;
+  game_over_flag = true;
 }
 
 function handle_key(e, canvas, ctx) {
@@ -1908,7 +1923,6 @@ function play_game(canvas, ctx, start_handler) {
 	});
 	$(document).bind('touchstart touchend touchmove', function(){
 		// handle swipe events
-  	var swiper = new Swipe(document.getElementById('screenwrap'));
 	
 	
 	// ------Translations--------
@@ -2569,6 +2583,8 @@ function game_over(canvas, ctx) {
   clearTimeout(ID2);
   render_pit(canvas, ctx);
   end_game(canvas, ctx);
+  game_over_flag = true;
+  swiper.run();
 }
 
 function autofall(canvas, ctx) {
@@ -3013,6 +3029,7 @@ $(document).ready(function () {
 		LAST_KEY_EL = 0;
 		play_game(canvas, ctx, null);
 		STATE.settouch = 1;
+		game_over_flag = false;
 	}
   });
   	
