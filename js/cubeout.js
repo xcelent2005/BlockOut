@@ -20,8 +20,6 @@ class Swipe {
 			var rect = canvas.getBoundingClientRect();
 			this.xCanvas = this.xDown - rect.left;
 			this.yCanvas = this.yDown - rect.top;
-					
-			
         }.bind(this), false);
         
     }
@@ -85,7 +83,7 @@ class Swipe {
 		}
 		handleTouchMove(evt) {
 			if ( !this.xDown || !this.yDown
-				&& typeof(this.xCanvas) == 'undefined' || this.xCanvas<250) {
+				|| this.xDown < window.innerWidth/2) {
 				return 0;
 			}
 			
@@ -118,7 +116,7 @@ class Swipe {
     }
 		handleTouchRotate(evt) {
 			if (! this.xDown || ! this.yDown
-				|| typeof(this.xCanvas) == 'undefined' || this.xCanvas>=250) {
+				|| this.xDown >= window.innerWidth/2) {
 				return 0;
 			}
 			// console.log(this.xCanvas + " rotate");
@@ -153,10 +151,12 @@ class Swipe {
         this.element.addEventListener('touchmove', function(evt) {
             this.handleTouchMove(evt);
             this.handleTouchRotate(evt);
+			evt.preventDefault();
         }.bind(this), false);
 		
 		this.element.addEventListener('touchend', function(evt) {
 			this.handleDoubleTap(evt);
+			evt.preventDefault();
         }.bind(this), false);
     }
 }
@@ -1908,7 +1908,7 @@ function play_game(canvas, ctx, start_handler) {
 	});
 	$(document).bind('touchstart touchend touchmove', function(){
 		// handle swipe events
-  	var swiper = new Swipe(document.getElementById('screen'));
+  	var swiper = new Swipe(document.getElementById('screenwrap'));
 	
 	
 	// ------Translations--------
@@ -2172,12 +2172,12 @@ function play_game(canvas, ctx, start_handler) {
 			var now = new Date().getTime();
 			var time_elapsed = now - last_swipe_time;
 			
-			if (time_elapsed>200){
-				rotate_flag = 1;
-				da[2] = -DELTA_ANGLE;
-				rot = invert(rotz);
-				last_swipe_time = new Date().getTime();
-			}
+		if (time_elapsed > 200){
+			rotate_flag = 1;
+			da[1] = -DELTA_ANGLE;
+			rot = roty;
+			last_swipe_time = new Date().getTime();
+		}
 		 if (rotate_flag) {
 			STATE.new_matrix = matmult(rot, STATE.new_matrix);
 			nvoxels = project_voxels(STATE.piece, STATE.new_x, STATE.new_y, STATE.new_z, STATE.new_matrix);
@@ -2229,11 +2229,12 @@ function play_game(canvas, ctx, start_handler) {
 		var time_elapsed = now - last_swipe_time;
 			
 		if (time_elapsed>200){
-			rotate_flag = 1;
-			da[2] = +DELTA_ANGLE;
-			rot = rotz;
-			last_swipe_time = new Date().getTime();
+				rotate_flag = 1;
+				da[1] = +DELTA_ANGLE;
+				rot = invert(roty);
+				last_swipe_time = new Date().getTime();
 		}
+		
 		
 		if (rotate_flag) {
 			STATE.new_matrix = matmult(rot, STATE.new_matrix);
@@ -2284,12 +2285,11 @@ function play_game(canvas, ctx, start_handler) {
 		
 		var now = new Date().getTime();
 		var time_elapsed = now - last_swipe_time;
-			
-		if (time_elapsed>200){
-				rotate_flag = 1;
-				da[1] = +DELTA_ANGLE;
-				rot = invert(roty);
-				last_swipe_time = new Date().getTime();
+			if (time_elapsed>200){
+			rotate_flag = 1;
+			da[2] = +DELTA_ANGLE;
+			rot = rotz;
+			last_swipe_time = new Date().getTime();
 		}
 		
 		if (rotate_flag) {
@@ -2341,12 +2341,14 @@ function play_game(canvas, ctx, start_handler) {
 		var now = new Date().getTime();
 		var time_elapsed = now - last_swipe_time;
 			
-		if (time_elapsed > 200){
-			rotate_flag = 1;
-			da[1] = -DELTA_ANGLE;
-			rot = roty;
-			last_swipe_time = new Date().getTime();
-		}
+
+		
+		if (time_elapsed>200){
+				rotate_flag = 1;
+				da[2] = -DELTA_ANGLE;
+				rot = invert(rotz);
+				last_swipe_time = new Date().getTime();
+			}
 		  
 		if (rotate_flag) {
 			STATE.new_matrix = matmult(rot, STATE.new_matrix);
