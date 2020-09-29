@@ -1,6 +1,7 @@
 /*****************************************************************************************/
 // Swipe class
 /*****************************************************************************************/
+var game_over_flag = false;
 
 class Swipe {
 	mylatesttap = 0;
@@ -13,11 +14,12 @@ class Swipe {
         this.element.addEventListener('touchstart', function(evt) {
             this.xDown = evt.touches[0].clientX;
             this.yDown = evt.touches[0].clientY;
-			
+			/*
 			var canvas = document.getElementById("screen");
 			var rect = canvas.getBoundingClientRect();
 			this.xCanvas = this.xDown - rect.left;
 			this.yCanvas = this.yDown - rect.top;
+			*/
         }.bind(this), false);
         
     }
@@ -81,10 +83,11 @@ class Swipe {
 		}
 		handleTouchMove(evt) {
 			if ( !this.xDown || !this.yDown
-				|| this.xDown < window.innerWidth/2) {
+				|| this.xDown < window.innerWidth/2 || game_over_flag==true) {
 				return 0;
 			}
-			
+			// console.log('move');
+
 			// console.log(this.xCanvas + " move");
 
 	    	var xUp = evt.touches[0].clientX;
@@ -110,15 +113,14 @@ class Swipe {
 			// Reset values.
 			this.xDown = null;
 			this.yDown = null;
-			return 1;
     }
 		handleTouchRotate(evt) {
 			if (! this.xDown || ! this.yDown
-				|| this.xDown >= window.innerWidth/2) {
+				|| this.xDown >= window.innerWidth/2 || game_over_flag==true) {
 				return 0;
 			}
-			// console.log(this.xCanvas + " rotate");
-	
+			//console.log('rotate');
+
 	    	var xUp = evt.touches[0].clientX;
 			var yUp = evt.touches[0].clientY;
 
@@ -142,16 +144,15 @@ class Swipe {
 			// Reset values.
 			this.xDown = null;
 			this.yDown = null;
-			return 1;
     }
 	
     run() {
         this.element.addEventListener('touchmove', function(evt) {
-            if (game_over_flag==false){
+			if (game_over_flag==false){
 				this.handleTouchMove(evt);
 				this.handleTouchRotate(evt);
+				evt.preventDefault();
 			}
-			evt.preventDefault();
         }.bind(this), false);
 		
 		this.element.addEventListener('touchend', function(evt) {
@@ -164,15 +165,524 @@ class Swipe {
 }
 
 
-var last_swipe_time = 0;
-
-var game_over_flag = true;
-
-var swiper;
-
 window.onload = (event) => {
-	var el = document.getElementById('screenwrap');
-	swiper = new Swipe(el);
+	var last_swipe_time = 0;
+	game_over_flag = false;
+
+	
+	$(document).bind('touchstart touchend touchmove', function(){
+	// handle swipe events
+	
+	var swiper = new Swipe(document.getElementById('screenwrap'));
+
+	// ------Translations--------
+	
+	swiper.onLeftMove(function() {
+		 if (STATE.paused) {
+			pause(canvas, ctx);
+			return;
+		  }
+		  var translate_flag = 0;
+		  var rotate_flag = 0;
+		  var drop_flag = 0;
+		  var anim_flag = 0;
+
+		  var dx = 0,
+			dy = 0,
+			dz = 0;
+		  var da = [0, 0, 0];
+		  var rot;
+
+		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
+		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
+		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
+
+		  var invert = function (m) {
+			var r = new Array(9);
+			r[0] = m[0];
+			r[1] = -m[1];
+			r[2] = -m[2];
+			r[3] = -m[3];
+			r[4] = m[4];
+			r[5] = -m[5];
+			r[6] = -m[6];
+			r[7] = -m[7];
+			r[8] = m[8];
+			return r;
+		  };
+		
+
+			var now = new Date().getTime();
+			var time_elapsed = now - last_swipe_time;
+			
+			if (time_elapsed>200){
+				translate_flag = 1;
+				dx = +DELTA;
+				last_swipe_time = new Date().getTime();
+			}
+		if (translate_flag) {
+			nvoxels = project_voxels(STATE.piece, STATE.new_x + dx, STATE.new_y + dy, STATE.new_z + dz, STATE.new_matrix);
+			if (!is_overlap_layers(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH, LAYERS)) {
+			  STATE.new_x += dx;
+			  STATE.new_y += dy;
+			  STATE.new_z += dz;
+			  anim_flag = 1;
+		}
+	if (anim_flag) set_start(rotate_flag);
+	return;
+  }
+  });
+	swiper.onRightMove(function() {
+		if (STATE.paused) {
+			pause(canvas, ctx);
+			return;
+		  }
+		  var translate_flag = 0;
+		  var rotate_flag = 0;
+		  var drop_flag = 0;
+		  var anim_flag = 0;
+
+		  var dx = 0,
+			dy = 0,
+			dz = 0;
+		  var da = [0, 0, 0];
+		  var rot;
+
+		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
+		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
+		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
+
+		  var invert = function (m) {
+			var r = new Array(9);
+			r[0] = m[0];
+			r[1] = -m[1];
+			r[2] = -m[2];
+			r[3] = -m[3];
+			r[4] = m[4];
+			r[5] = -m[5];
+			r[6] = -m[6];
+			r[7] = -m[7];
+			r[8] = m[8];
+			return r;
+		  };
+		var now = new Date().getTime();
+		var time_elapsed = now - last_swipe_time;
+			
+		if (time_elapsed>200){
+			translate_flag = 1;
+			dx = -DELTA;
+			last_swipe_time = new Date().getTime();
+		}
+		if (translate_flag) {
+			nvoxels = project_voxels(STATE.piece, STATE.new_x + dx, STATE.new_y + dy, STATE.new_z + dz, STATE.new_matrix);
+			if (!is_overlap_layers(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH, LAYERS)) {
+			  STATE.new_x += dx;
+			  STATE.new_y += dy;
+			  STATE.new_z += dz;
+			  anim_flag = 1;
+			}
+		}
+		if (anim_flag) set_start(rotate_flag);
+	});
+	swiper.onUpMove(function() {
+      if (STATE.paused) {
+			pause(canvas, ctx);
+			return;
+		  }
+		  var translate_flag = 0;
+		  var rotate_flag = 0;
+		  var drop_flag = 0;
+		  var anim_flag = 0;
+
+		  var dx = 0,
+			dy = 0,
+			dz = 0;
+		  var da = [0, 0, 0];
+		  var rot;
+
+		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
+		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
+		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
+
+		  var invert = function (m) {
+			var r = new Array(9);
+			r[0] = m[0];
+			r[1] = -m[1];
+			r[2] = -m[2];
+			r[3] = -m[3];
+			r[4] = m[4];
+			r[5] = -m[5];
+			r[6] = -m[6];
+			r[7] = -m[7];
+			r[8] = m[8];
+			return r;
+		  };
+		
+		var now = new Date().getTime();
+		var time_elapsed = now - last_swipe_time;
+			
+		if (time_elapsed>200){
+			translate_flag = 1;
+			dy = -DELTA;
+			last_swipe_time = new Date().getTime();
+
+		}
+		
+		if (translate_flag) {
+			nvoxels = project_voxels(STATE.piece, STATE.new_x + dx, STATE.new_y + dy, STATE.new_z + dz, STATE.new_matrix);
+			if (!is_overlap_layers(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH, LAYERS)) {
+			  STATE.new_x += dx;
+			  STATE.new_y += dy;
+			  STATE.new_z += dz;
+			  anim_flag = 1;
+			}
+		}
+		if (anim_flag) set_start(rotate_flag);
+	});
+	swiper.onDownMove(function() {
+		if (STATE.paused) {
+			pause(canvas, ctx);
+			return;
+		  }
+		  var translate_flag = 0;
+		  var rotate_flag = 0;
+		  var drop_flag = 0;
+		  var anim_flag = 0;
+
+		  var dx = 0,
+			dy = 0,
+			dz = 0;
+		  var da = [0, 0, 0];
+		  var rot;
+
+		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
+		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
+		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
+
+		  var invert = function (m) {
+			var r = new Array(9);
+			r[0] = m[0];
+			r[1] = -m[1];
+			r[2] = -m[2];
+			r[3] = -m[3];
+			r[4] = m[4];
+			r[5] = -m[5];
+			r[6] = -m[6];
+			r[7] = -m[7];
+			r[8] = m[8];
+			return r;
+		  };
+		
+		var now = new Date().getTime();
+		var time_elapsed = now - last_swipe_time;
+			
+		if (time_elapsed > 200){
+			translate_flag = 1;
+			dy = +DELTA;
+			last_swipe_time = new Date().getTime();
+		}
+		
+		if (translate_flag) {
+			nvoxels = project_voxels(STATE.piece, STATE.new_x + dx, STATE.new_y + dy, STATE.new_z + dz, STATE.new_matrix);
+			if (!is_overlap_layers(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH, LAYERS)) {
+			  STATE.new_x += dx;
+			  STATE.new_y += dy;
+			  STATE.new_z += dz;
+			  anim_flag = 1;
+			}
+		}
+		if (anim_flag) set_start(rotate_flag);
+	});
+
+		
+		
+		// ------Rotations--------
+		
+		swiper.onLeftRotate(function() {
+		 if (STATE.paused) {
+			pause(canvas, ctx);
+			return;
+		  }
+		  var translate_flag = 0;
+		  var rotate_flag = 0;
+		  var drop_flag = 0;
+		  var anim_flag = 0;
+
+		  var dx = 0,
+			dy = 0,
+			dz = 0;
+		  var da = [0, 0, 0];
+		  var rot;
+
+		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
+		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
+		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
+
+		  var invert = function (m) {
+			var r = new Array(9);
+			r[0] = m[0];
+			r[1] = -m[1];
+			r[2] = -m[2];
+			r[3] = -m[3];
+			r[4] = m[4];
+			r[5] = -m[5];
+			r[6] = -m[6];
+			r[7] = -m[7];
+			r[8] = m[8];
+			return r;
+		  };
+		
+
+			var now = new Date().getTime();
+			var time_elapsed = now - last_swipe_time;
+			
+		if (time_elapsed > 200){
+			rotate_flag = 1;
+			da[1] = -DELTA_ANGLE;
+			rot = roty;
+			last_swipe_time = new Date().getTime();
+		}
+		 if (rotate_flag) {
+			STATE.new_matrix = matmult(rot, STATE.new_matrix);
+			nvoxels = project_voxels(STATE.piece, STATE.new_x, STATE.new_y, STATE.new_z, STATE.new_matrix);
+			var deltas = overlap_diff(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH);
+			STATE.new_x += deltas[0];
+			STATE.new_y += deltas[1];
+			STATE.new_z += deltas[2];
+			STATE.new_angles = da;
+			anim_flag = 1;
+		  }
+	if (anim_flag) set_start(rotate_flag);
+	return;
+  });
+  
+	swiper.onRightRotate(function() {
+		if (STATE.paused) {
+			pause(canvas, ctx);
+			return;
+		  }
+		  var translate_flag = 0;
+		  var rotate_flag = 0;
+		  var drop_flag = 0;
+		  var anim_flag = 0;
+
+		  var dx = 0,
+			dy = 0,
+			dz = 0;
+		  var da = [0, 0, 0];
+		  var rot;
+
+		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
+		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
+		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
+
+		  var invert = function (m) {
+			var r = new Array(9);
+			r[0] = m[0];
+			r[1] = -m[1];
+			r[2] = -m[2];
+			r[3] = -m[3];
+			r[4] = m[4];
+			r[5] = -m[5];
+			r[6] = -m[6];
+			r[7] = -m[7];
+			r[8] = m[8];
+			return r;
+		  };
+		var now = new Date().getTime();
+		var time_elapsed = now - last_swipe_time;
+			
+		if (time_elapsed>200){
+				rotate_flag = 1;
+				da[1] = +DELTA_ANGLE;
+				rot = invert(roty);
+				last_swipe_time = new Date().getTime();
+		}
+		
+		
+		if (rotate_flag) {
+			STATE.new_matrix = matmult(rot, STATE.new_matrix);
+			nvoxels = project_voxels(STATE.piece, STATE.new_x, STATE.new_y, STATE.new_z, STATE.new_matrix);
+			var deltas = overlap_diff(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH);
+			STATE.new_x += deltas[0];
+			STATE.new_y += deltas[1];
+			STATE.new_z += deltas[2];
+			STATE.new_angles = da;
+			anim_flag = 1;
+		  }
+		if (anim_flag) set_start(rotate_flag);
+	});
+	
+	swiper.onUpRotate(function() {
+      if (STATE.paused) {
+			pause(canvas, ctx);
+			return;
+		  }
+		  var translate_flag = 0;
+		  var rotate_flag = 0;
+		  var drop_flag = 0;
+		  var anim_flag = 0;
+
+		  var dx = 0,
+			dy = 0,
+			dz = 0;
+		  var da = [0, 0, 0];
+		  var rot;
+
+		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
+		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
+		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
+
+		  var invert = function (m) {
+			var r = new Array(9);
+			r[0] = m[0];
+			r[1] = -m[1];
+			r[2] = -m[2];
+			r[3] = -m[3];
+			r[4] = m[4];
+			r[5] = -m[5];
+			r[6] = -m[6];
+			r[7] = -m[7];
+			r[8] = m[8];
+			return r;
+		  };
+		
+		var now = new Date().getTime();
+		var time_elapsed = now - last_swipe_time;
+			if (time_elapsed>200){
+			rotate_flag = 1;
+			da[2] = +DELTA_ANGLE;
+			rot = rotz;
+			last_swipe_time = new Date().getTime();
+		}
+		
+		if (rotate_flag) {
+			STATE.new_matrix = matmult(rot, STATE.new_matrix);
+			nvoxels = project_voxels(STATE.piece, STATE.new_x, STATE.new_y, STATE.new_z, STATE.new_matrix);
+			var deltas = overlap_diff(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH);
+			STATE.new_x += deltas[0];
+			STATE.new_y += deltas[1];
+			STATE.new_z += deltas[2];
+			STATE.new_angles = da;
+			anim_flag = 1;
+		  }
+		if (anim_flag) set_start(rotate_flag);
+	});
+	swiper.onDownRotate(function() {
+		if (STATE.paused) {
+			pause(canvas, ctx);
+			return;
+		  }
+		  var translate_flag = 0;
+		  var rotate_flag = 0;
+		  var drop_flag = 0;
+		  var anim_flag = 0;
+
+		  var dx = 0,
+			dy = 0,
+			dz = 0;
+		  var da = [0, 0, 0];
+		  var rot;
+
+		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
+		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
+		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
+
+		  var invert = function (m) {
+			var r = new Array(9);
+			r[0] = m[0];
+			r[1] = -m[1];
+			r[2] = -m[2];
+			r[3] = -m[3];
+			r[4] = m[4];
+			r[5] = -m[5];
+			r[6] = -m[6];
+			r[7] = -m[7];
+			r[8] = m[8];
+			return r;
+		  };
+		
+		var now = new Date().getTime();
+		var time_elapsed = now - last_swipe_time;
+			
+
+		
+		if (time_elapsed>200){
+				rotate_flag = 1;
+				da[2] = -DELTA_ANGLE;
+				rot = invert(rotz);
+				last_swipe_time = new Date().getTime();
+			}
+		  
+		if (rotate_flag) {
+			STATE.new_matrix = matmult(rot, STATE.new_matrix);
+			nvoxels = project_voxels(STATE.piece, STATE.new_x, STATE.new_y, STATE.new_z, STATE.new_matrix);
+			var deltas = overlap_diff(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH);
+			STATE.new_x += deltas[0];
+			STATE.new_y += deltas[1];
+			STATE.new_z += deltas[2];
+			STATE.new_angles = da;
+			anim_flag = 1;
+		  }
+		if (anim_flag) set_start(rotate_flag);
+	});
+	
+	
+	// ------Double tap--------
+	
+	swiper.onDoubletap(function(){
+		if (STATE.paused) {
+			pause(canvas, ctx);
+			return;
+		  }
+		  var translate_flag = 0;
+		  var rotate_flag = 0;
+		  var drop_flag = 0;
+		  var anim_flag = 0;
+
+		  var dx = 0,
+			dy = 0,
+			dz = 0;
+		  var da = [0, 0, 0];
+		  var rot;
+
+		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
+		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
+		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
+
+		  var invert = function (m) {
+			var r = new Array(9);
+			r[0] = m[0];
+			r[1] = -m[1];
+			r[2] = -m[2];
+			r[3] = -m[3];
+			r[4] = m[4];
+			r[5] = -m[5];
+			r[6] = -m[6];
+			r[7] = -m[7];
+			r[8] = m[8];
+			return r;
+		  };
+			drop_flag = 1;
+			var nvoxels;
+
+		  if (drop_flag) {
+			for (var i = 0; i < PIT_DEPTH; ++i) {
+			  nvoxels = project_voxels(STATE.piece, STATE.new_x, STATE.new_y, STATE.new_z + DELTA, STATE.new_matrix);
+			  if (!is_overlap_layers(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH, LAYERS)) {
+				STATE.new_z += DELTA;
+				anim_flag = 1;
+			  } else {
+				break;
+			  }
+			}
+			STATE.touchdown_flag = 1;
+		  }
+		  if (anim_flag) set_start(rotate_flag);
+		  return;
+		});
+		swiper.run();
+	});
 };
 
 
@@ -1735,7 +2245,6 @@ function end_game(canvas, ctx) {
   set_ui_gameover();
   CANVAS = canvas;
   CTX = ctx;
-  game_over_flag = true;
 }
 
 function handle_key(e, canvas, ctx) {
@@ -1921,521 +2430,8 @@ function play_game(canvas, ctx, start_handler) {
 	$(document).keydown(function (e) {
 		handle_key(e, canvas, ctx);
 	});
-	$(document).bind('touchstart touchend touchmove', function(){
-		// handle swipe events
 	
 	
-	// ------Translations--------
-	
-	swiper.onLeftMove(function() {
-		 if (STATE.paused) {
-			pause(canvas, ctx);
-			return;
-		  }
-		  var translate_flag = 0;
-		  var rotate_flag = 0;
-		  var drop_flag = 0;
-		  var anim_flag = 0;
-
-		  var dx = 0,
-			dy = 0,
-			dz = 0;
-		  var da = [0, 0, 0];
-		  var rot;
-
-		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
-		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
-		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
-
-		  var invert = function (m) {
-			var r = new Array(9);
-			r[0] = m[0];
-			r[1] = -m[1];
-			r[2] = -m[2];
-			r[3] = -m[3];
-			r[4] = m[4];
-			r[5] = -m[5];
-			r[6] = -m[6];
-			r[7] = -m[7];
-			r[8] = m[8];
-			return r;
-		  };
-		
-
-			var now = new Date().getTime();
-			var time_elapsed = now - last_swipe_time;
-			
-			if (time_elapsed>200){
-				translate_flag = 1;
-				dx = +DELTA;
-				last_swipe_time = new Date().getTime();
-			}
-		if (translate_flag) {
-			nvoxels = project_voxels(STATE.piece, STATE.new_x + dx, STATE.new_y + dy, STATE.new_z + dz, STATE.new_matrix);
-			if (!is_overlap_layers(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH, LAYERS)) {
-			  STATE.new_x += dx;
-			  STATE.new_y += dy;
-			  STATE.new_z += dz;
-			  anim_flag = 1;
-		}
-	if (anim_flag) set_start(rotate_flag);
-	return;
-  }
-  });
-	swiper.onRightMove(function() {
-		if (STATE.paused) {
-			pause(canvas, ctx);
-			return;
-		  }
-		  var translate_flag = 0;
-		  var rotate_flag = 0;
-		  var drop_flag = 0;
-		  var anim_flag = 0;
-
-		  var dx = 0,
-			dy = 0,
-			dz = 0;
-		  var da = [0, 0, 0];
-		  var rot;
-
-		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
-		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
-		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
-
-		  var invert = function (m) {
-			var r = new Array(9);
-			r[0] = m[0];
-			r[1] = -m[1];
-			r[2] = -m[2];
-			r[3] = -m[3];
-			r[4] = m[4];
-			r[5] = -m[5];
-			r[6] = -m[6];
-			r[7] = -m[7];
-			r[8] = m[8];
-			return r;
-		  };
-		var now = new Date().getTime();
-		var time_elapsed = now - last_swipe_time;
-			
-		if (time_elapsed>200){
-			translate_flag = 1;
-			dx = -DELTA;
-			last_swipe_time = new Date().getTime();
-		}
-		if (translate_flag) {
-			nvoxels = project_voxels(STATE.piece, STATE.new_x + dx, STATE.new_y + dy, STATE.new_z + dz, STATE.new_matrix);
-			if (!is_overlap_layers(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH, LAYERS)) {
-			  STATE.new_x += dx;
-			  STATE.new_y += dy;
-			  STATE.new_z += dz;
-			  anim_flag = 1;
-			}
-		}
-		if (anim_flag) set_start(rotate_flag);
-	});
-	swiper.onUpMove(function() {
-      if (STATE.paused) {
-			pause(canvas, ctx);
-			return;
-		  }
-		  var translate_flag = 0;
-		  var rotate_flag = 0;
-		  var drop_flag = 0;
-		  var anim_flag = 0;
-
-		  var dx = 0,
-			dy = 0,
-			dz = 0;
-		  var da = [0, 0, 0];
-		  var rot;
-
-		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
-		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
-		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
-
-		  var invert = function (m) {
-			var r = new Array(9);
-			r[0] = m[0];
-			r[1] = -m[1];
-			r[2] = -m[2];
-			r[3] = -m[3];
-			r[4] = m[4];
-			r[5] = -m[5];
-			r[6] = -m[6];
-			r[7] = -m[7];
-			r[8] = m[8];
-			return r;
-		  };
-		
-		var now = new Date().getTime();
-		var time_elapsed = now - last_swipe_time;
-			
-		if (time_elapsed>200){
-			translate_flag = 1;
-			dy = -DELTA;
-			last_swipe_time = new Date().getTime();
-
-		}
-		
-		if (translate_flag) {
-			nvoxels = project_voxels(STATE.piece, STATE.new_x + dx, STATE.new_y + dy, STATE.new_z + dz, STATE.new_matrix);
-			if (!is_overlap_layers(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH, LAYERS)) {
-			  STATE.new_x += dx;
-			  STATE.new_y += dy;
-			  STATE.new_z += dz;
-			  anim_flag = 1;
-			}
-		}
-		if (anim_flag) set_start(rotate_flag);
-	});
-	swiper.onDownMove(function() {
-		if (STATE.paused) {
-			pause(canvas, ctx);
-			return;
-		  }
-		  var translate_flag = 0;
-		  var rotate_flag = 0;
-		  var drop_flag = 0;
-		  var anim_flag = 0;
-
-		  var dx = 0,
-			dy = 0,
-			dz = 0;
-		  var da = [0, 0, 0];
-		  var rot;
-
-		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
-		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
-		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
-
-		  var invert = function (m) {
-			var r = new Array(9);
-			r[0] = m[0];
-			r[1] = -m[1];
-			r[2] = -m[2];
-			r[3] = -m[3];
-			r[4] = m[4];
-			r[5] = -m[5];
-			r[6] = -m[6];
-			r[7] = -m[7];
-			r[8] = m[8];
-			return r;
-		  };
-		
-		var now = new Date().getTime();
-		var time_elapsed = now - last_swipe_time;
-			
-		if (time_elapsed > 200){
-			translate_flag = 1;
-			dy = +DELTA;
-			last_swipe_time = new Date().getTime();
-		}
-		
-		if (translate_flag) {
-			nvoxels = project_voxels(STATE.piece, STATE.new_x + dx, STATE.new_y + dy, STATE.new_z + dz, STATE.new_matrix);
-			if (!is_overlap_layers(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH, LAYERS)) {
-			  STATE.new_x += dx;
-			  STATE.new_y += dy;
-			  STATE.new_z += dz;
-			  anim_flag = 1;
-			}
-		}
-		if (anim_flag) set_start(rotate_flag);
-	});
-
-		
-		
-		// ------Rotations--------
-		
-		swiper.onLeftRotate(function() {
-		 if (STATE.paused) {
-			pause(canvas, ctx);
-			return;
-		  }
-		  var translate_flag = 0;
-		  var rotate_flag = 0;
-		  var drop_flag = 0;
-		  var anim_flag = 0;
-
-		  var dx = 0,
-			dy = 0,
-			dz = 0;
-		  var da = [0, 0, 0];
-		  var rot;
-
-		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
-		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
-		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
-
-		  var invert = function (m) {
-			var r = new Array(9);
-			r[0] = m[0];
-			r[1] = -m[1];
-			r[2] = -m[2];
-			r[3] = -m[3];
-			r[4] = m[4];
-			r[5] = -m[5];
-			r[6] = -m[6];
-			r[7] = -m[7];
-			r[8] = m[8];
-			return r;
-		  };
-		
-
-			var now = new Date().getTime();
-			var time_elapsed = now - last_swipe_time;
-			
-		if (time_elapsed > 200){
-			rotate_flag = 1;
-			da[1] = -DELTA_ANGLE;
-			rot = roty;
-			last_swipe_time = new Date().getTime();
-		}
-		 if (rotate_flag) {
-			STATE.new_matrix = matmult(rot, STATE.new_matrix);
-			nvoxels = project_voxels(STATE.piece, STATE.new_x, STATE.new_y, STATE.new_z, STATE.new_matrix);
-			var deltas = overlap_diff(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH);
-			STATE.new_x += deltas[0];
-			STATE.new_y += deltas[1];
-			STATE.new_z += deltas[2];
-			STATE.new_angles = da;
-			anim_flag = 1;
-		  }
-	if (anim_flag) set_start(rotate_flag);
-	return;
-  });
-  
-	swiper.onRightRotate(function() {
-		if (STATE.paused) {
-			pause(canvas, ctx);
-			return;
-		  }
-		  var translate_flag = 0;
-		  var rotate_flag = 0;
-		  var drop_flag = 0;
-		  var anim_flag = 0;
-
-		  var dx = 0,
-			dy = 0,
-			dz = 0;
-		  var da = [0, 0, 0];
-		  var rot;
-
-		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
-		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
-		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
-
-		  var invert = function (m) {
-			var r = new Array(9);
-			r[0] = m[0];
-			r[1] = -m[1];
-			r[2] = -m[2];
-			r[3] = -m[3];
-			r[4] = m[4];
-			r[5] = -m[5];
-			r[6] = -m[6];
-			r[7] = -m[7];
-			r[8] = m[8];
-			return r;
-		  };
-		var now = new Date().getTime();
-		var time_elapsed = now - last_swipe_time;
-			
-		if (time_elapsed>200){
-				rotate_flag = 1;
-				da[1] = +DELTA_ANGLE;
-				rot = invert(roty);
-				last_swipe_time = new Date().getTime();
-		}
-		
-		
-		if (rotate_flag) {
-			STATE.new_matrix = matmult(rot, STATE.new_matrix);
-			nvoxels = project_voxels(STATE.piece, STATE.new_x, STATE.new_y, STATE.new_z, STATE.new_matrix);
-			var deltas = overlap_diff(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH);
-			STATE.new_x += deltas[0];
-			STATE.new_y += deltas[1];
-			STATE.new_z += deltas[2];
-			STATE.new_angles = da;
-			anim_flag = 1;
-		  }
-		if (anim_flag) set_start(rotate_flag);
-	});
-	
-	swiper.onUpRotate(function() {
-      if (STATE.paused) {
-			pause(canvas, ctx);
-			return;
-		  }
-		  var translate_flag = 0;
-		  var rotate_flag = 0;
-		  var drop_flag = 0;
-		  var anim_flag = 0;
-
-		  var dx = 0,
-			dy = 0,
-			dz = 0;
-		  var da = [0, 0, 0];
-		  var rot;
-
-		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
-		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
-		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
-
-		  var invert = function (m) {
-			var r = new Array(9);
-			r[0] = m[0];
-			r[1] = -m[1];
-			r[2] = -m[2];
-			r[3] = -m[3];
-			r[4] = m[4];
-			r[5] = -m[5];
-			r[6] = -m[6];
-			r[7] = -m[7];
-			r[8] = m[8];
-			return r;
-		  };
-		
-		var now = new Date().getTime();
-		var time_elapsed = now - last_swipe_time;
-			if (time_elapsed>200){
-			rotate_flag = 1;
-			da[2] = +DELTA_ANGLE;
-			rot = rotz;
-			last_swipe_time = new Date().getTime();
-		}
-		
-		if (rotate_flag) {
-			STATE.new_matrix = matmult(rot, STATE.new_matrix);
-			nvoxels = project_voxels(STATE.piece, STATE.new_x, STATE.new_y, STATE.new_z, STATE.new_matrix);
-			var deltas = overlap_diff(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH);
-			STATE.new_x += deltas[0];
-			STATE.new_y += deltas[1];
-			STATE.new_z += deltas[2];
-			STATE.new_angles = da;
-			anim_flag = 1;
-		  }
-		if (anim_flag) set_start(rotate_flag);
-	});
-	swiper.onDownRotate(function() {
-		if (STATE.paused) {
-			pause(canvas, ctx);
-			return;
-		  }
-		  var translate_flag = 0;
-		  var rotate_flag = 0;
-		  var drop_flag = 0;
-		  var anim_flag = 0;
-
-		  var dx = 0,
-			dy = 0,
-			dz = 0;
-		  var da = [0, 0, 0];
-		  var rot;
-
-		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
-		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
-		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
-
-		  var invert = function (m) {
-			var r = new Array(9);
-			r[0] = m[0];
-			r[1] = -m[1];
-			r[2] = -m[2];
-			r[3] = -m[3];
-			r[4] = m[4];
-			r[5] = -m[5];
-			r[6] = -m[6];
-			r[7] = -m[7];
-			r[8] = m[8];
-			return r;
-		  };
-		
-		var now = new Date().getTime();
-		var time_elapsed = now - last_swipe_time;
-			
-
-		
-		if (time_elapsed>200){
-				rotate_flag = 1;
-				da[2] = -DELTA_ANGLE;
-				rot = invert(rotz);
-				last_swipe_time = new Date().getTime();
-			}
-		  
-		if (rotate_flag) {
-			STATE.new_matrix = matmult(rot, STATE.new_matrix);
-			nvoxels = project_voxels(STATE.piece, STATE.new_x, STATE.new_y, STATE.new_z, STATE.new_matrix);
-			var deltas = overlap_diff(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH);
-			STATE.new_x += deltas[0];
-			STATE.new_y += deltas[1];
-			STATE.new_z += deltas[2];
-			STATE.new_angles = da;
-			anim_flag = 1;
-		  }
-		if (anim_flag) set_start(rotate_flag);
-	});
-	
-	
-	// ------Double tap--------
-	
-	swiper.onDoubletap(function(){
-		if (STATE.paused) {
-			pause(canvas, ctx);
-			return;
-		  }
-		  var translate_flag = 0;
-		  var rotate_flag = 0;
-		  var drop_flag = 0;
-		  var anim_flag = 0;
-
-		  var dx = 0,
-			dy = 0,
-			dz = 0;
-		  var da = [0, 0, 0];
-		  var rot;
-
-		  var rotx = [1, 0, 0, 0, 0, -1, 0, 1, 0];
-		  var roty = [0, 0, 1, 0, 1, 0, -1, 0, 0];
-		  var rotz = [0, -1, 0, 1, 0, 0, 0, 0, 1];
-
-		  var invert = function (m) {
-			var r = new Array(9);
-			r[0] = m[0];
-			r[1] = -m[1];
-			r[2] = -m[2];
-			r[3] = -m[3];
-			r[4] = m[4];
-			r[5] = -m[5];
-			r[6] = -m[6];
-			r[7] = -m[7];
-			r[8] = m[8];
-			return r;
-		  };
-			drop_flag = 1;
-			var nvoxels;
-
-		  if (drop_flag) {
-			for (var i = 0; i < PIT_DEPTH; ++i) {
-			  nvoxels = project_voxels(STATE.piece, STATE.new_x, STATE.new_y, STATE.new_z + DELTA, STATE.new_matrix);
-			  if (!is_overlap_layers(nvoxels, PIT_WIDTH, PIT_HEIGHT, PIT_DEPTH, LAYERS)) {
-				STATE.new_z += DELTA;
-				anim_flag = 1;
-			  } else {
-				break;
-			  }
-			}
-			STATE.touchdown_flag = 1;
-		  }
-		  if (anim_flag) set_start(rotate_flag);
-		  return;
-
-		});
-		swiper.run();
-
-	})
-  
 }
 
 // fps counter globals
@@ -2584,7 +2580,6 @@ function game_over(canvas, ctx) {
   render_pit(canvas, ctx);
   end_game(canvas, ctx);
   game_over_flag = true;
-  swiper.run();
 }
 
 function autofall(canvas, ctx) {
@@ -3029,7 +3024,13 @@ $(document).ready(function () {
 		LAST_KEY_EL = 0;
 		play_game(canvas, ctx, null);
 		STATE.settouch = 1;
-		game_over_flag = false;
+	}
+  });
+  $('#over').bind('touchend', function (evt) {
+	if (!STATE.settouch){  
+		LAST_KEY_EL = 0;
+		play_game(canvas, ctx, null);
+		STATE.settouch = 1;
 	}
   });
   	
@@ -3067,6 +3068,10 @@ function showScoreUI() {
   init_game_keys(CANVAS, CTX);
 
   USERNAME = '';
+  
+  // here code for restarting
+  STATE.settouch = 0;
+  game_over_flag = false;
 }
 
 // Local variables:
