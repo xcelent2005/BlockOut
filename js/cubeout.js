@@ -1,7 +1,7 @@
 /*****************************************************************************************/
 // Swipe class
 /*****************************************************************************************/
-var game_over_flag = false;
+var game_over_flag = true;
 
 class Swipe {
 	mylatesttap = 0;
@@ -167,7 +167,7 @@ class Swipe {
 
 window.onload = (event) => {
 	var last_swipe_time = 0;
-	game_over_flag = false;
+	game_over_flag = true;
 
 	
 	$(document).bind('touchstart touchend touchmove', function(){
@@ -2399,6 +2399,9 @@ function handle_key(e, canvas, ctx) {
 }
 
 function play_game(canvas, ctx, start_handler) {
+  
+  game_over_flag = false;
+  
   $(document).unbind('keydown', start_handler);
   set_ui_game();
   reset_pit(0);
