@@ -86,11 +86,8 @@ class Swipe {
 				|| this.xDown < window.innerWidth/2 || game_over_flag==true) {
 				return 0;
 			}
-			// console.log('move');
-
-			// console.log(this.xCanvas + " move");
-
-	    	var xUp = evt.touches[0].clientX;
+			    	
+			var xUp = evt.touches[0].clientX;
 			var yUp = evt.touches[0].clientY;
 
 			this.xDiff = this.xDown - xUp;
@@ -398,7 +395,7 @@ window.onload = (event) => {
 		
 		// ------Rotations--------
 		
-		swiper.onLeftRotate(function() {
+	swiper.onLeftRotate(function() {
 		 if (STATE.paused) {
 			pause(canvas, ctx);
 			return;
@@ -439,7 +436,7 @@ window.onload = (event) => {
 		if (time_elapsed > 200){
 			rotate_flag = 1;
 			da[1] = -DELTA_ANGLE;
-			rot = roty;
+			rot = invert(roty);
 			last_swipe_time = new Date().getTime();
 		}
 		 if (rotate_flag) {
@@ -456,7 +453,7 @@ window.onload = (event) => {
 	return;
   });
   
-	swiper.onRightRotate(function() {
+  swiper.onRightRotate(function() {
 		if (STATE.paused) {
 			pause(canvas, ctx);
 			return;
@@ -494,8 +491,8 @@ window.onload = (event) => {
 			
 		if (time_elapsed>200){
 				rotate_flag = 1;
-				da[1] = +DELTA_ANGLE;
-				rot = invert(roty);
+				da[1] = DELTA_ANGLE;
+				rot = roty;
 				last_swipe_time = new Date().getTime();
 		}
 		
@@ -551,8 +548,8 @@ window.onload = (event) => {
 		var time_elapsed = now - last_swipe_time;
 			if (time_elapsed>200){
 			rotate_flag = 1;
-			da[2] = +DELTA_ANGLE;
-			rot = rotz;
+			da[2] = -DELTA_ANGLE;
+			rot = invert(rotz);
 			last_swipe_time = new Date().getTime();
 		}
 		
@@ -609,8 +606,8 @@ window.onload = (event) => {
 		
 		if (time_elapsed>200){
 				rotate_flag = 1;
-				da[2] = -DELTA_ANGLE;
-				rot = invert(rotz);
+				da[2] = +DELTA_ANGLE;
+				rot = rotz;
 				last_swipe_time = new Date().getTime();
 			}
 		  
@@ -3017,12 +3014,13 @@ $(document).ready(function () {
   $('#hs').click(function () {
     show_highscores();
   });
+  
   $('#hs_back').click(function () {
     set_ui_start();
   });
 
 
-  $('#message').bind('touchend', function (evt) {
+  $('#controls').bind('touchend', function (evt) {
 	if (!STATE.settouch){  
 		LAST_KEY_EL = 0;
 		play_game(canvas, ctx, null);
