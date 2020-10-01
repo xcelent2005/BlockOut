@@ -708,8 +708,8 @@ window.onload = (event) => {
 		var time_elapsed = now - last_swipe_time;
 			if (time_elapsed>200){
 				rotate_flag = 1;
-				da[2] = -DELTA_ANGLE;
-				rot = invert(rotz);
+				da[2] = DELTA_ANGLE;
+				rot = rotz;
 				last_swipe_time = new Date().getTime();
 			}
 		
@@ -762,13 +762,11 @@ window.onload = (event) => {
 		
 		var now = new Date().getTime();
 		var time_elapsed = now - last_swipe_time;
-			
-
 		
 		if (time_elapsed>200){
 			rotate_flag = 1;
-			da[2] = DELTA_ANGLE;
-			rot = rotz;
+			da[2] = -DELTA_ANGLE;
+			rot = invert(rotz);
 			last_swipe_time = new Date().getTime();
 		}
 		  
