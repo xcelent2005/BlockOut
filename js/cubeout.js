@@ -126,14 +126,12 @@ class Swipe {
 		handleTouchRotateUp(evt) {
 			if (! this.xDown || ! this.yDown
 				|| this.xDown >= window.innerWidth/2 
-				|| this.yDown >= window.innerHeight*0.55
+				|| (this.yDown > 620*0.75)
 				|| game_over_flag==true) {
 				return 0;
 			}
 			
-			
-			
-			console.log('up');
+			// console.log('up'+" " + this.yDown + " "+620*0.75);
 
 	    	var xUp = evt.touches[0].clientX;
 			var yUp = evt.touches[0].clientY;
@@ -164,13 +162,13 @@ class Swipe {
 			if (! this.xDown || ! this.yDown
 				|| this.xDown >= window.innerWidth/2 
 				|| game_over_flag==true
-				|| this.yDown < window.innerHeight*0.55
+				|| (this.yDown < 620*0.75)
 			) {
 				return 0;
 			}
 			
 			
-			console.log('down');
+			//console.log('down'+" " + this.yDown + " "+window.innerHeight*0.75);
 
 	    	var xUp = evt.touches[0].clientX;
 			var yUp = evt.touches[0].clientY;
@@ -594,10 +592,10 @@ window.onload = (event) => {
 		
 		var now = new Date().getTime();
 		var time_elapsed = now - last_swipe_time;
-			if (time_elapsed>200){
+		if (time_elapsed>200){
 			rotate_flag = 1;
-			da[2] = -DELTA_ANGLE;
-			rot = invert(rotz);
+			da[0] = -DELTA_ANGLE;
+			rot = invert(rotx);
 			last_swipe_time = new Date().getTime();
 		}
 		
@@ -653,11 +651,11 @@ window.onload = (event) => {
 
 		
 		if (time_elapsed>200){
-				rotate_flag = 1;
-				da[0] = DELTA_ANGLE;
-				rot = rotx;
-				last_swipe_time = new Date().getTime();
-			}
+			rotate_flag = 1;
+			da[0] = +DELTA_ANGLE;
+			rot = rotx;
+			last_swipe_time = new Date().getTime();
+		}
 		  
 		if (rotate_flag) {
 			STATE.new_matrix = matmult(rot, STATE.new_matrix);
