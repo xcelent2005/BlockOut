@@ -126,7 +126,7 @@ class Swipe {
 		handleTouchRotateUp(evt) {
 			if (! this.xDown || ! this.yDown
 				|| this.xDown >= window.innerWidth/2 
-				|| (this.yDown > 620*0.75)
+				|| (this.yDown > 620*0.65)
 				|| game_over_flag==true) {
 				return 0;
 			}
@@ -162,7 +162,7 @@ class Swipe {
 			if (! this.xDown || ! this.yDown
 				|| this.xDown >= window.innerWidth/2 
 				|| game_over_flag==true
-				|| (this.yDown < 620*0.75)
+				|| (this.yDown < 620*0.65)
 			) {
 				return 0;
 			}
@@ -481,7 +481,7 @@ window.onload = (event) => {
 			
 		if (time_elapsed > 200){
 			rotate_flag = 1;
-			da[1] = -DELTA_ANGLE;
+			da[1] = +DELTA_ANGLE;
 			rot = invert(roty);
 			last_swipe_time = new Date().getTime();
 		}
@@ -537,8 +537,8 @@ window.onload = (event) => {
 			
 		if (time_elapsed>200){
 				rotate_flag = 1;
-				da[1] = DELTA_ANGLE;
-				rot = roty;
+				da[1] = - DELTA_ANGLE;
+				rot = invert(roty);
 				last_swipe_time = new Date().getTime();
 		}
 		
